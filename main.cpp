@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cstdio>
 #include <string.h>
 #include <iostream>
@@ -18,6 +17,7 @@ using namespace std;
 #define xPlayerA borderWidth
 #define xPlayerB (widthMap - borderWidth - 15)
 #define ballDiameter 20
+#define ray (float)(ballDiameter)/2
 #define FPS 60
 
 //map command key
@@ -53,15 +53,14 @@ char *itoa (int value, char *result, int base)
     return result;
 }
 
-void stampaMappa()
+void stampaMappa(bool victory)
 {
 	//BORDI ORRIZONTALI
 	DrawRectangle(0,0, widthMap, borderWidth, WHITE);
 	DrawRectangle(0,heightMap-borderWidth, widthMap, borderWidth, WHITE);
 
 	//CONFINE DEL CAMPO
-	for (int i = borderWidth; i < heightMap-borderWidth; i += 30)
-	{
+	for (int i = borderWidth; i < heightMap-borderWidth; i += 30) {
 		DrawRectangle(widthMap/2 - 8, i + 7, 16, 15, WHITE);	
 	}
 }
@@ -91,10 +90,11 @@ int generaAngolazione(int minModule, int maxModule)
 }
 
 void invertAngulation(int *xBall, int *yBall, int *feed_xBall, int *feed_yBall, 
-						 int yPlayerA, int yPlayerB)
+						 int yPlayerA, int yPlayerB, Sound bounce)
 {
 		int accelerazione,
 			deaccelerazione,
+			slowdownPossibiliti,
 			angle;
 		bool collisionePlayer,
 			 collisioneMuro;
@@ -102,25 +102,26 @@ void invertAngulation(int *xBall, int *yBall, int *feed_xBall, int *feed_yBall,
 		collisionePlayer = false;
 		collisioneMuro = false;
 
-		if (*yBall <= borderWidth){
-			*yBall  = borderWidth+1;
+		if (*yBall-ray <= borderWidth){
+			*yBall  = borderWidth+1+ray;
 			collisioneMuro = true;
 		}
-		else if (*yBall >= heightMap-borderWidth-1-ballDiameter) {
-			*yBall = heightMap-borderWidth-1-ballDiameter-1;
+		else if (*yBall+ray >= heightMap-borderWidth-1) {
+			*yBall = heightMap-borderWidth-1-1-ray;
 			collisioneMuro = true;
 		}
-		else if (*xBall <= xPlayerA + 15 && ((*yBall > yPlayerA && *yBall < yPlayerA + 100) || (*yBall + ballDiameter > yPlayerA && *yBall + ballDiameter < yPlayerA + 100) )) {
-			*xBall = xPlayerA + 15;
+		else if (*xBall-ray <= xPlayerA + 15 && ((*yBall-ray > yPlayerA && *yBall-ray < yPlayerA + 100) || (*yBall-ray + ballDiameter > yPlayerA && *yBall-ray + ballDiameter < yPlayerA + 100) )) {
+			*xBall = xPlayerA + 15 + ray;
 			collisionePlayer = true;
 		}
-		else if (*xBall >= widthMap - borderWidth - 15 - ballDiameter && (*yBall > yPlayerB && *yBall < yPlayerB + 100 || *yBall + ballDiameter > yPlayerB && *yBall + ballDiameter < yPlayerB + 100 )) {
-			*xBall = widthMap - borderWidth - 15 - ballDiameter - 1;
+		else if (*xBall-ray >= widthMap - borderWidth - 15 - ballDiameter && (*yBall-ray > yPlayerB && *yBall-ray < yPlayerB + 100 || *yBall-ray + ballDiameter > yPlayerB && *yBall-ray + ballDiameter < yPlayerB + 100 )) {
+			*xBall = widthMap - borderWidth - 15 - 1 - ray;
 			collisionePlayer = true;
 		}
 		
 		//se fa collisione con la racchetta del player, aumenta di velocità la pallina
 		if (collisionePlayer) {
+			PlaySound(bounce);
 			*feed_xBall *= -1; 
 			
 			angle = generaAngolazione(0,3);
@@ -129,6 +130,7 @@ void invertAngulation(int *xBall, int *yBall, int *feed_xBall, int *feed_yBall,
 			angle = generaAngolazione(0, 2);
 			if (*feed_xBall + angle >= minSpeed && *feed_xBall + angle <= maxSpeed)
 				*feed_xBall += angle;
+
  			accelerazione = rand() % 3 + 1;
 	
 			
@@ -147,8 +149,13 @@ void invertAngulation(int *xBall, int *yBall, int *feed_xBall, int *feed_yBall,
 		}
 
 	if (collisioneMuro)	 {
+		PlaySound(bounce);
 		*feed_yBall *= -1;
-		deaccelerazione = rand() % 2;	
+		deaccelerazione = 0;
+
+		slowdownPossibiliti = rand() % 3;	
+
+		if (slowdownPossibiliti == 2)	deaccelerazione = 1;
 		
 		if (abs(*feed_xBall) - deaccelerazione >= minSpeed && abs(*feed_yBall) - deaccelerazione >= minSpeed) {
 			if (*feed_xBall <= 0)		
@@ -163,14 +170,82 @@ void invertAngulation(int *xBall, int *yBall, int *feed_xBall, int *feed_yBall,
 		}
 	}
 }
+void printEnding(bool a, bool b, int scoreA, int scoreB)
+{
+	char *buf;
 
+	buf = (char*)malloc(sizeof(char)*2);
+	if (a || b)
+	{
+		BeginDrawing();	
+			ClearBackground(BLACK);
+			stampaMappa(true);
+			if (a) {
+				DrawText("VITTORIA", widthMap/2-320, heightMap/2-50, 50, GREEN);
+				DrawText(itoa(scoreA, buf, 10), widthMap/2-320, heightMap/2+20, 40, GREEN);
+
+				DrawText("SCONFITTA", widthMap/2+60, heightMap/2-50, 50, RED);
+				DrawText(itoa(scoreB, buf, 10), widthMap/2+60, heightMap/2+20, 40, RED);
+			}
+			else {
+				DrawText(itoa(scoreA, buf, 10), widthMap/2-320, heightMap/2+20, 40, GREEN);
+				DrawText("SCONFITTA", widthMap/2-320, heightMap/2-50, 50, GREEN);
+
+				DrawText("VITTORIA", widthMap/2+60, heightMap/2-50, 50, RED);
+				DrawText(itoa(scoreB, buf, 10), widthMap/2+60, heightMap/2+20, 40, RED);
+			}
+
+		EndDrawing();
+		WaitTime(3);
+
+	}
+
+}
+void isEnd(int scoreA, int scoreB, int *keyPressed, bool *aWin, bool *bWin)
+{
+	if (scoreA == 5)		*aWin = true;
+	else if (scoreB == 5)	*bWin = true;
+	
+	if (*aWin || *bWin)
+		*keyPressed = exitKey;
+
+}
+void thereIsGoal(int *xBall, int *yBall, int *scoreA, int *scoreB,
+			int *speed_coeficientBallX, int *speed_coeficientBallY, int *yPlayerA, int *yPlayerB,
+			int *feed_yBall, int *feed_xBall)
+{
+	if ( *xBall-ray + ballDiameter > xPlayerB || *xBall-ray < borderWidth - 15 ) {
+
+		if (*xBall-ray + ballDiameter > xPlayerB) {
+			*scoreA += 1;
+			*speed_coeficientBallX = 5;
+		}
+		else {
+			*scoreB += 1;
+			*speed_coeficientBallX = -5;
+		}
+
+
+		*speed_coeficientBallY = 0;
+
+		*yPlayerA = heightMap/2 - 50;
+		*yPlayerB = heightMap/2 - 50;
+
+		*feed_xBall = *speed_coeficientBallX;
+		*feed_yBall = *speed_coeficientBallY;
+		*xBall = widthMap / 2 - ballDiameter/2;
+		*yBall = heightMap / 2 - ballDiameter/2;
+	}
+
+}
 int main()
 {
+	
 	//VARIABLE DECLARATION
 	int keyPressed,
 		keyA,
 		keyB,
-		keyMap[10] = {80, 81,87,83,264,265},
+		keyMap[10] = {80, 81, 87, 83, 264, 265},
 		nKeyRegistered,
 		yPlayerA,
 		yPlayerB,
@@ -186,20 +261,37 @@ int main()
 		speed_coeficientBallY,
 		scoreA,
 		scoreB;
-	bool pause;
+	bool pause,
+		 aWin, bWin;
 	char *buf;
+	Sound bounce;
 
 	cout << "AVVIO PONG-GAME" << endl;	
 	srand(time(NULL));
 	Image iconGame = LoadImage("IMG/icon.png");	
 
 	InitWindow(widthMap, heightMap, "PONG GAME");
-	SetTargetFPS(FPS);
+	InitAudioDevice();
+	if (IsAudioDeviceReady())	
+		cout << "LOG: AUDIO: successfully" << endl;
+	else
+		cout << "SYSTEM ERROR: AUDIO: NOT STARTED!" << endl;
+
 	SetWindowIcon(iconGame);
+	SetTargetFPS(FPS);
+	SetMasterVolume(50);
+
 	HideCursor();
 	DisableCursor();
 
+	buf = (char*)malloc(sizeof(char)*2);
+
 	pause = false;
+	aWin = false;
+	bWin = false;
+	
+	bounce = LoadSound("AUDIO/23338__altemark__pong.wav");
+
 	nKeyRegistered = 6;
 	yPlayerA = heightMap/2 - 50;
 	yPlayerB = heightMap/2 - 50;
@@ -211,13 +303,15 @@ int main()
 	xBall = widthMap / 2 - ballDiameter/2;
 	yBall = heightMap / 2 - ballDiameter/2;
 	speed_coeficientBall = 2;
-	speed_coeficientBallX = 4;
+	speed_coeficientBallX = 5;
 	speed_coeficientBallY = 0;
 	feed_xBall = -speed_coeficientBallX;
 	feed_yBall = -speed_coeficientBallY; 
 	scoreA = 0;
 	scoreB = 0;
 
+
+	
 	while (!WindowShouldClose() && keyPressed != exitKey)
 	{
 		//COMMANDS MANAGEMENT
@@ -252,60 +346,56 @@ int main()
 			}
 
 		}	
-		if (IsKeyUp(keyA))
-			feed_speedA = 0;
-		if (IsKeyUp(keyB))
-			feed_speedB = 0;
-		BeginDrawing();	
-			stampaMappa();
 
-			DrawCircle(0, heightMap/2, heightMap/2-borderWidth, GRAY_SOFT);
-			DrawCircle(widthMap, heightMap/2, heightMap/2-borderWidth, GRAY_SOFT);
+		BeginDrawing();	
+			stampaMappa(false);
+			
+			DrawCircle(0, heightMap/2, heightMap*1.0/2-borderWidth, GRAY_SOFT);
+			DrawCircle(widthMap, heightMap/2, heightMap*1.0/2-borderWidth, GRAY_SOFT);
 
 			DrawRectangle(xPlayerA, yPlayerA, 15, 100, REDLIGHT);
 			DrawRectangle(xPlayerB, yPlayerB, 15, 100, REDLIGHT);
 			
-			DrawRectangle(xBall, yBall, ballDiameter, ballDiameter, GREEN);
-
 			DrawText("SCORE A: ", widthMap/2-200, borderWidth+15, 20, SKYBLUE);
 			DrawText(itoa(scoreA, buf, 10), widthMap/2-100, borderWidth+15, 20, SKYBLUE);
 			DrawText("SCORE B: ", widthMap/2+100, borderWidth+15, 20, SKYBLUE);
 			DrawText(itoa(scoreB, buf, 10), widthMap/2+200, borderWidth+15, 20, SKYBLUE);
 
+			DrawCircle(xBall, yBall, ray, GREEN);
+
 			ClearBackground(BLACK);
 		EndDrawing();
 
-		if (yPlayerA + feed_speedA >= borderWidth && yPlayerA + feed_speedA <= heightMap - borderWidth - 100)
-			yPlayerA += feed_speedA;
-		if (yPlayerB + feed_speedB >= borderWidth && yPlayerB + feed_speedB <= heightMap - borderWidth - 100)
-			yPlayerB += feed_speedB;
 		
-		//COLLISIONI PALLINA
-		if (!pause) {
+		if (IsKeyUp(keyA))
+			feed_speedA = 0;
+		if (IsKeyUp(keyB))
+			feed_speedB = 0;
+		if (!pause)
+		{
+			if (yPlayerA + feed_speedA >= borderWidth && 
+			yPlayerA + feed_speedA <= heightMap - borderWidth - 100)
+			{
+				yPlayerA += feed_speedA;
+			}
+			if (yPlayerB + feed_speedB >= borderWidth &&
+				yPlayerB + feed_speedB <= heightMap - borderWidth - 100)
+			{
+				yPlayerB += feed_speedB;
+			}	
 			xBall += feed_xBall;
 			yBall += feed_yBall;
 		}
 
-		invertAngulation(&xBall, &yBall, &feed_xBall, &feed_yBall, 
-						 yPlayerA, yPlayerB);
 
+		invertAngulation(&xBall, &yBall, &feed_xBall, &feed_yBall, yPlayerA, yPlayerB, bounce);
 
-		if ( xBall + ballDiameter > xPlayerB || xBall < borderWidth - 15 ) {
+		thereIsGoal(&xBall, &yBall, &scoreA, &scoreB, &speed_coeficientBallX, &speed_coeficientBallY, 
+					&yPlayerA, &yPlayerB, &feed_yBall, &feed_xBall);
 
-			if (xBall + ballDiameter > xPlayerB) 
-				scoreA += 5;
-			else
-				scoreB += 5;
-
-			yPlayerA = heightMap/2 - 50;
-			yPlayerB = heightMap/2 - 50;
-			speed_coeficientBallX = 5;
-			speed_coeficientBallY = 0;
-			feed_xBall = speed_coeficientBallX;
-			feed_yBall = speed_coeficientBallY;
-			xBall = widthMap / 2 - ballDiameter/2;
-			yBall = heightMap / 2 - ballDiameter/2;
-		}
+		isEnd(scoreA, scoreB, &keyPressed, &aWin, &bWin);
 	}
+
+	printEnding(aWin, bWin, scoreA, scoreB);
 	CloseWindow();
 }
