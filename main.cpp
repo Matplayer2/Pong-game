@@ -94,7 +94,7 @@ int main()
 			DrawCircle(widthMap, heightMap/2, heightMap*1.0/2-borderWidth, GRAY_SOFT);
 
 			DrawRectangle(xPlayerA, yPlayerA, 15, 100, RED);
-			DrawRectangle(xPlayerB, yPlayerB, 15, 100, RED);
+			DrawRectangle(xPlayerB, yPlayerB, 15, 100, REDLIGHT);
 			
 			DrawText("SCORE A: ", widthMap/2-200, borderWidth+15, 20, SKYBLUE);
 			DrawText(itoa(scoreA, buf, 10), widthMap/2-100, borderWidth+15, 20, SKYBLUE);

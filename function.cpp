@@ -231,28 +231,76 @@ void feedsMovement(int *xBall, int *yBall, int *yPlayerA, int *yPlayerB,
 	*xBall += feed_xBall;
 	*yBall += feed_yBall;
 }
-void menuModeManage()
+void menuModeManage(int *keyPressed)
 {
-	bool menuMode;
+	int	state,
+		key,
+		volume;
 	char *buf,
 		 *tmp;
 
 
 	buf = (char*)malloc(sizeof(char)*10);
 	tmp = (char*)malloc(sizeof(char)*10);
-	menuMode = true;
+	state = 0;
 	EnableCursor();
-	while (menuMode)
+	key = 0;
+	while (key != 256)
 	{
-		if (GetKeyPressed() == 256)	
-			menuMode = false;
+		key = GetKeyPressed();	
+
+		//arrow map 
+		switch (key) {
+			case escKey:	
+				key = 256;
+				break;
+			case arrowUpKey: // arrow up
+					if (state == 0)	state = 2;
+					else
+						state--;
+				break;
+			case arrowDownKey: // arrow down
+					if (state == 2)	state = 0;
+					else
+						state++;
+				break;
+		}
+
+		switch (state) {
+			case 0:
+				if (key == enterKey)
+					key = 256;
+				break;
+			case 1:
+				if (key == arrowLeftKey) {
+					volume = GetMasterVolume();
+					SetMasterVolume(volume - 5);
+				} else if (key == arrowRightKey) {
+					volume = GetMasterVolume();
+					SetMasterVolume(volume + 5);
+				}
+				break;
+			case 2:
+				if (key == enterKey) {
+					*keyPressed = exitKey;
+					key = 256;
+				}
+				break;
+		}
+
+		cout << "key: " << key << endl;
 		BeginDrawing();
 			DrawRectangle((widthMap-512)/2, (heightMap-256)/2, 512+borderMenu, 256+borderMenu, (Color){10,230,230,255});
 			DrawRectangle((widthMap-512)/2+borderMenu, (heightMap-256)/2+borderMenu, 512-borderMenu, 256-borderMenu, (Color){200,200,200,255});
 
+			if (state == 0)
+				DrawRectangle((widthMap-512)/2+borderWidth+130 - 10, (heightMap-256)/2+borderMenu + 15, (512-borderMenu)-260+7, 44, RED);
+			
 			DrawRectangle((widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 15, (512-borderMenu)-260, 40, BLACK);
 			DrawText("RESUME", widthMap/2-65, (heightMap-256)/2+borderMenu + 20, 35, RED);
 
+			if (state == 1)
+				DrawRectangle( (widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 60, (512-borderMenu)-260+7, 44, RED);
 			DrawRectangle((widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 60, (512-borderMenu)-260, 40, BLACK);
 	
 			memset((void*)buf, 0, 10);	
@@ -260,9 +308,11 @@ void menuModeManage()
 			strcat(buf,itoa(GetMasterVolume(), tmp, 10));
 			DrawText(buf, widthMap/2-65, (heightMap-256)/2+borderMenu + 65, 35, RED);
 
+			if (state == 2)
+				DrawRectangle( (widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 105, (512-borderMenu)-260+7, 44, RED);
 			DrawRectangle((widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 105, (512-borderMenu)-260, 40, BLACK);
 			DrawText("EXIT GAME", widthMap/2-95, (heightMap-256)/2+borderMenu + 110, 35, RED);
-
+			
 		EndDrawing();
 	}
 }
@@ -295,7 +345,7 @@ void verifyKeyPressing(int keyMap[], int nKeyRegistered, int *feed_speedA, int *
 					pause = false;		
 				break;
 			case 256:
-				menuModeManage();
+				menuModeManage(keyPressed);
 				HideCursor();
 				break;
 		}

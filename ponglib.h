@@ -24,7 +24,12 @@
 
 	//map command key
 	#define exitKey 81
-
+	#define enterKey 257
+	#define arrowUpKey 265
+	#define arrowDownKey 264
+	#define arrowLeftKey 263
+	#define arrowRightKey 262
+	#define escKey 256
 	//COLOR
 	#define GRAY_SOFT       (Color){ 70, 70, 70, 100 }
 	#define REDLIGHT        (Color){ 255, 0, 0, 255 }     // Red
