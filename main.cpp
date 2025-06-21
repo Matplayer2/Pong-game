@@ -50,7 +50,7 @@ int main()
 	SetWindowIcon(iconGame);
 	SetExitKey(exitKey);
 	SetTargetFPS(FPS);
-	SetMasterVolume(50);
+	SetMasterVolume(0.5);
 
 	HideCursor();
 	DisableCursor();

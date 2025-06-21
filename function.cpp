@@ -235,15 +235,24 @@ void menuModeManage(int *keyPressed)
 {
 	int	state,
 		key,
-		volume;
+		ySetter,
+		Mx, My,
+		audioLevel;
+	double volume;
+	const int startPosButtomMenuX = (widthMap-512)/2+borderMenu + 130,
+			  lenghtButtomMenu = (512-borderMenu)-260,
+			  yButMenu1 = (heightMap)/2+borderMenu + 15,
+			  yButMenu2 = (heightMap)/2+borderMenu + 60,
+			  yButMenu3 = (heightMap)/2+borderMenu + 105,
+			  heightButMenu = 40;
 	char *buf,
 		 *tmp;
-
 
 	buf = (char*)malloc(sizeof(char)*10);
 	tmp = (char*)malloc(sizeof(char)*10);
 	state = 0;
 	EnableCursor();
+	SetMousePosition(100, 100);
 	key = 0;
 	while (key != 256)
 	{
@@ -274,10 +283,10 @@ void menuModeManage(int *keyPressed)
 			case 1:
 				if (key == arrowLeftKey) {
 					volume = GetMasterVolume();
-					SetMasterVolume(volume - 5);
+					SetMasterVolume(volume - 0.05);
 				} else if (key == arrowRightKey) {
 					volume = GetMasterVolume();
-					SetMasterVolume(volume + 5);
+					SetMasterVolume(volume + 0.05);
 				}
 				break;
 			case 2:
@@ -287,31 +296,78 @@ void menuModeManage(int *keyPressed)
 				}
 				break;
 		}
+		Mx = GetMouseX();
+		My = GetMouseY();
+		
+		if (Mx >= (widthMap-512)/2+borderWidth+130 && Mx < (widthMap-512)/2+borderMenu + 130 + (512-borderMenu)-260)
+		{
+			if (My >= yButMenu1 + ySetter && My <= yButMenu1 + ySetter + heightButMenu)
+				state = 0;
+			else if (My >= yButMenu2 + ySetter && My <= yButMenu2 + ySetter + heightButMenu)
+				state = 1;
+			else if (My >= yButMenu3 + ySetter && My <= yButMenu3 + ySetter + heightButMenu)
+				state = 2;
 
-		cout << "key: " << key << endl;
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				cout << "eseguito!" << endl;
+				switch (state) {
+					case 0:
+							key = 256;
+						break;
+					case 1:
+						if (key == arrowLeftKey) {
+							volume = GetMasterVolume();
+							SetMasterVolume(volume - 0.05);
+						} else if (key == arrowRightKey) {
+							volume = GetMasterVolume();
+							SetMasterVolume(volume + 0.05);
+						}
+						break;
+					case 2:
+							*keyPressed = exitKey;
+							key = 256;
+						break;
+				}
+
+			}
+		}
+		if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && Mx >= (widthMap-512)/2+borderMenu+130
+				&& Mx < (widthMap-512)/2+borderMenu + 130 + (512-borderMenu)-260)
+		{
+			cout << "dentro!" << endl;
+
+		}
+		ySetter = -85;
+		
 		BeginDrawing();
-			DrawRectangle((widthMap-512)/2, (heightMap-256)/2, 512+borderMenu, 256+borderMenu, (Color){10,230,230,255});
-			DrawRectangle((widthMap-512)/2+borderMenu, (heightMap-256)/2+borderMenu, 512-borderMenu, 256-borderMenu, (Color){200,200,200,255});
+			DrawRectangle((widthMap-512)/2, (heightMap-256)/2, 512+borderMenu, 256+borderMenu, WHITE);
+			DrawRectangle((widthMap-512)/2+borderMenu, (heightMap-256)/2+borderMenu, 512-borderMenu, 256-borderMenu, (Color){30,30,30,255});
 
 			if (state == 0)
-				DrawRectangle((widthMap-512)/2+borderWidth+130 - 10, (heightMap-256)/2+borderMenu + 15, (512-borderMenu)-260+7, 44, RED);
+				DrawRectangle(startPosButtomMenuX - 1, yButMenu1-1 + ySetter, lenghtButtomMenu+2, 42, RED);
 			
-			DrawRectangle((widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 15, (512-borderMenu)-260, 40, BLACK);
-			DrawText("RESUME", widthMap/2-65, (heightMap-256)/2+borderMenu + 20, 35, RED);
+			DrawRectangle(startPosButtomMenuX, yButMenu1 + ySetter, lenghtButtomMenu, heightButMenu, BLACK);
+			DrawText("RESUME", widthMap/2-65, yButMenu1 + 5 + ySetter, heightButMenu-5, RED);
 
 			if (state == 1)
-				DrawRectangle( (widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 60, (512-borderMenu)-260+7, 44, RED);
-			DrawRectangle((widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 60, (512-borderMenu)-260, 40, BLACK);
+				DrawRectangle(startPosButtomMenuX-1, yButMenu2-1 + ySetter, lenghtButtomMenu+2, heightButMenu+2, RED);
+			DrawRectangle(startPosButtomMenuX, yButMenu2 + ySetter, lenghtButtomMenu, heightButMenu, BLACK);
 	
 			memset((void*)buf, 0, 10);	
 			strcat(buf, "AUDIO: ");
-			strcat(buf,itoa(GetMasterVolume(), tmp, 10));
-			DrawText(buf, widthMap/2-65, (heightMap-256)/2+borderMenu + 65, 35, RED);
+			if ((int)(GetMasterVolume()*100)%5 != 0)
+				audioLevel = GetMasterVolume() * 100 + (5 - (int)(GetMasterVolume()*100)%5);
+			else
+				audioLevel = GetMasterVolume()*100;
+
+			strcat(buf,itoa(audioLevel, tmp, 10));
+			DrawText(buf, widthMap/2-65, yButMenu2 + 5 + ySetter, heightButMenu-5, RED);
 
 			if (state == 2)
-				DrawRectangle( (widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 105, (512-borderMenu)-260+7, 44, RED);
-			DrawRectangle((widthMap-512)/2+borderMenu + 130, (heightMap-256)/2+borderMenu + 105, (512-borderMenu)-260, 40, BLACK);
-			DrawText("EXIT GAME", widthMap/2-95, (heightMap-256)/2+borderMenu + 110, 35, RED);
+				DrawRectangle( startPosButtomMenuX-1, yButMenu3-1 + ySetter, lenghtButtomMenu+2, 42, RED);
+			DrawRectangle(startPosButtomMenuX, yButMenu3 + ySetter, lenghtButtomMenu, heightButMenu, BLACK);
+			DrawText("EXIT GAME", widthMap/2-95, yButMenu3 + 5 + ySetter, heightButMenu-5, RED);
 			
 		EndDrawing();
 	}
