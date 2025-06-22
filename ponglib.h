@@ -19,6 +19,15 @@
 	#define xPlayerB (widthMap - borderWidth - 15)
 	#define ballDiameter 20
 	#define borderMenu 6
+	#define ySetter -85
+
+	#define startPosButtomMenuX  (widthMap-512)/2+borderMenu + 130
+	#define lenghtButtomMenu  (512-borderMenu)-260
+	#define yButMenu1  (heightMap)/2+borderMenu + 15 + ySetter
+	#define yButMenu2  (heightMap)/2+borderMenu + 60 + ySetter
+	#define yButMenu3 (heightMap)/2+borderMenu + 105 + ySetter
+	#define heightButMenu 40
+
 	#define ray (float)(ballDiameter)/2
 	#define FPS 60
 
